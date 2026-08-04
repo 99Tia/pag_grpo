@@ -1,17 +1,3 @@
-"""
-Input:
-    OpenIE results:
-        passage
-        extracted_entities
-        extracted_triples
-Output:
-    entity-passage graph:
-        entity/phrase nodes
-        passage/chunk nodes
-        entity-entity relation edges
-        passage-entity context edges
-"""
-
 from __future__ import annotations
 import json
 import logging
@@ -49,17 +35,9 @@ class GraphBuilderConfig:
     # Edge weights
     relation_edge_weight: float = 1.0
     passage_entity_edge_weight: float = 1.0
-
-    # HippoRAG mainly links passage nodes to entities appearing in triples.
-    # Keep NER-only entity edges optional because they can add noise.
     include_ner_entities: bool = False
-
-    # If True, relation edges are added in both directions when graph is directed.
     add_reverse_relation_edges: bool = True
-
-    # If True, passage/entity edges are added both ways when graph is directed.
     add_reverse_passage_edges: bool = True
-
     force_rebuild: bool = True
 
 
@@ -111,8 +89,6 @@ class PPRAgentGraphBuilder:
 
     def reset_state(self) -> None:
         self.nodes: Dict[str, GraphNode] = {}
-
-        # edge_key -> metadata
         self.edge_stats: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
 
         self.entity_id_to_text: Dict[str, str] = {}
