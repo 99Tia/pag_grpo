@@ -1,0 +1,92 @@
+# -------------------------
+# Python-generated files
+# -------------------------
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# -------------------------
+# Local environments
+# -------------------------
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+env/
+ENV/
+
+# -------------------------
+# IDE and operating system
+# -------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# -------------------------
+# Datasets
+# -------------------------
+data/
+old_data/
+
+# -------------------------
+# Generated experiment files
+# -------------------------
+outputs/
+logs/
+old_logs/
+runs/
+wandb/
+
+# -------------------------
+# Old and archived code
+# -------------------------
+archive/
+old_scripts/
+old_src/
+
+# -------------------------
+# Third-party reference copies
+# -------------------------
+reference/
+
+# -------------------------
+# Models and checkpoints
+# -------------------------
+models/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# -------------------------
+# Embedding and index artifacts
+# -------------------------
+*.npy
+*.npz
+*.faiss
+*.index
+
+# -------------------------
+# Temporary files
+# -------------------------
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+pag_rl_conda_before_repair.txt
+requirements_pag_rl_before_repair.txt
+
+# -------------------------
+# Credentials
+# -------------------------
+credentials.json
+secrets.json
+token.json
