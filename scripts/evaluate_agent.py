@@ -430,7 +430,6 @@ def merge_answer_and_retrieval_rows(
         row = dict(retrieval_row)
         row.update(answer_row)
 
-        # Preserve retrieval-side trajectory fields if answer row does not have them.
         if "steps" not in row and "steps" in retrieval_row:
             row["steps"] = retrieval_row["steps"]
 
@@ -440,7 +439,6 @@ def merge_answer_and_retrieval_rows(
         if "controller_final_answer" not in row:
             row["controller_final_answer"] = retrieval_row.get("final_answer")
 
-        # Prefer top-level answer evidence if present; otherwise retrieval evidence.
         if not row.get("evidence_passages") and retrieval_row.get("evidence_passages"):
             row["evidence_passages"] = retrieval_row["evidence_passages"]
 
@@ -784,11 +782,7 @@ def evaluate_one(
 
     prediction = get_prediction(row)
     gold_answers = get_gold_answers(row)
-
-    # Final integrated ranking used by the answer reader.
     evidence_passages = get_evidence_passages(row)
-
-    # Stage-specific rankings retained by the integrated pipeline.
     base_passages = get_named_passages(
         row,
         "base_evidence_passages",
@@ -802,8 +796,6 @@ def evaluate_one(
         "fused_evidence_passages",
     )
 
-    # For older outputs these fields do not exist. Keep stage evaluation
-    # optional rather than replacing the final evidence ranking.
     if not fused_passages:
         fused_passages = evidence_passages
 
@@ -910,7 +902,6 @@ def evaluate_one(
             get_invalid_support_id_count(row)
         ),
 
-        # Process/evidence metrics.
         "passage_answer_hit": float(
             passage_answer_hit
         ),
@@ -1006,7 +997,6 @@ def aggregate_results(
             ]
         ),
 
-        # Controller behavior.
         "controller_unknown_rate": mean(
             [
                 float(item["controller_unknown"])
@@ -1026,7 +1016,7 @@ def aggregate_results(
             ]
         ),
 
-        # Evidence statistics.
+
         "avg_num_evidence_passages": mean(
             [
                 float(item["num_evidence_passages"])
@@ -1060,7 +1050,6 @@ def aggregate_results(
             ]
         ),
 
-        # Finalization health.
         "integrated_finalization_rate": mean(
             [
                 float(item["has_integrated_finalization"])
@@ -1092,7 +1081,6 @@ def aggregate_results(
             ]
         ),
 
-        # Evidence answer-hit metrics.
         "passage_answer_hit_rate": mean(
             [
                 float(item["passage_answer_hit"])
@@ -1114,7 +1102,6 @@ def aggregate_results(
             ]
         ),
 
-        # Useful warning for ID mismatch.
         "gold_id_overlap_rate": mean(
             [float(item["gold_id_overlap_exists"]) for item in per_example]
         ),
@@ -1140,7 +1127,6 @@ def aggregate_results(
     )
 
     for k in k_list:
-        # Main final-ranking metrics.
         summary[f"recall@{k}"] = mean(
             [
                 item[f"recall@{k}"]
@@ -1160,7 +1146,6 @@ def aggregate_results(
             ]
         )
 
-        # Stage-specific diagnostics.
         for stage in [
             "base",
             "selector",
