@@ -69,7 +69,6 @@ def to_plain(obj: Any) -> Any:
 
 
 def normalize_triple_key(triple: Any) -> str:
-    """Build a stable key for deduplicating triples/facts."""
     plain = to_plain(triple)
 
     if isinstance(plain, dict):
@@ -89,9 +88,6 @@ def normalize_triple_key(triple: Any) -> str:
 
 
 def passage_to_memory_text(passage: RetrievedPassage, max_chars: int = 1200) -> str:
-    """
-    Convert a passage to compact memory text for the next search request.
-    """
     pid = getattr(passage, "passage_id", "unknown")
     text = getattr(passage, "text", "") or ""
     text = text.strip()
@@ -103,9 +99,6 @@ def passage_to_memory_text(passage: RetrievedPassage, max_chars: int = 1200) -> 
 
 
 def triple_to_memory_text(triple: Any) -> str:
-    """
-    Convert candidate/filtered triple objects into compact text.
-    """
     plain = to_plain(triple)
 
     if isinstance(plain, dict):
@@ -129,15 +122,6 @@ def triple_to_memory_text(triple: Any) -> str:
 
 
 class EvidenceMemory:
-    """
-    Stores evidence across multiple SearchGraph calls.
-    It keeps:
-        - retrieved passages
-        - candidate triples
-        - LLM-filtered triples
-        - seed/search metadata
-    """
-
     def __init__(
         self,
         deduplicate: bool = True,
@@ -215,9 +199,6 @@ class EvidenceMemory:
     # Search result memory
 
     def add_search_result(self, search_result: Any) -> None:
-        """
-        Add passages, candidate triples, filtered triples, and seed info from one SearchGraph result.
-        """
         passages = getattr(search_result, "passages", None)
         if isinstance(passages, list):
             self.add_many(passages)
