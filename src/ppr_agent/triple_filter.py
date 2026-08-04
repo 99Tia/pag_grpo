@@ -1,6 +1,3 @@
-"""Input: question, candidate triples from query-to-triple retrieval
-Output: filtered triples that should seed PPR"""
-
 from __future__ import annotations
 import ast
 import difflib
@@ -153,8 +150,6 @@ def _find_first_json_object(text: str) -> Optional[str]:
 
 def _parse_object_or_list(text: str) -> Any:
     text = _strip_code_fences(text)
-
-    # First try direct JSON.
     try:
         return json.loads(text)
     except Exception:
@@ -170,8 +165,6 @@ def _parse_object_or_list(text: str) -> Any:
                 return ast.literal_eval(obj)
             except Exception:
                 pass
-
-    # Then Python literal.
     try:
         return ast.literal_eval(text)
     except Exception:
