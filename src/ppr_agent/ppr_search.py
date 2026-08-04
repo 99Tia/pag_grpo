@@ -1,14 +1,3 @@
-"""SearchGraph / PPR retrieval for the LLM-controlled iterative PPR agent.
-Flow: SearchGraphRequest
-    -> controlled query construction
-    -> query-to-triple retrieval from TripleIndex
-    -> optional LLM triple filtering
-    -> entity reset from selected triples and agent seed entities
-    -> direct passage reset from selected triple source passages
-    -> dense passage reset
-    -> Personalized PageRank over entity-passage graph
-    -> ranked passages"""
-
 from __future__ import annotations
 import json
 import logging
