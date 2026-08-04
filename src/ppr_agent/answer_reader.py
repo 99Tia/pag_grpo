@@ -1,23 +1,3 @@
-"""Grounded answer reader for finalized PPR-agent trajectories.
-
-This module is the reusable package version of:
-
-    scripts/run_answer_generation.py
-
-It keeps the working answer prompt and generation behavior while exposing a
-callable class for AgentEnv and future GRPO rollout finalization.
-
-Expected online flow
---------------------
-PPR trajectory
-    -> EvidenceSelectorV2
-    -> HybridEvidenceFuser
-    -> GroundedAnswerReader
-    -> trajectory reward
-
-Only the 8B controller will be trained later. The answer reader remains frozen.
-"""
-
 from __future__ import annotations
 
 import json
@@ -30,7 +10,6 @@ from ppr_agent.openie_extractor import OpenIEExtractorConfig, build_backend
 
 @dataclass
 class AnswerReaderConfig:
-    """Configuration for the frozen grounded answer reader."""
 
     backend: str = "openai"
     model_name: str = "llama70b-filter"
@@ -90,8 +69,6 @@ class AnswerReaderConfig:
 
 @dataclass
 class AnswerReaderResult:
-    """Structured result from one grounded answer-generation call."""
-
     question: str
     predicted_answer: str
 
@@ -134,8 +111,6 @@ class AnswerReaderResult:
 
 
 def to_plain(value: Any) -> Any:
-    """Convert framework dataclasses and objects to plain Python values."""
-
     if value is None:
         return None
 
@@ -201,8 +176,6 @@ def truncate_text(text: Any, max_chars: int) -> str:
 
 
 def normalize_generation_output(raw: Any) -> str:
-    """Normalize output from OpenAI, vLLM, transformers, or mock backends."""
-
     if raw is None:
         return ""
 
@@ -269,8 +242,6 @@ def normalize_passage(
     raw: Any,
     fallback_rank: int,
 ) -> Optional[Dict[str, Any]]:
-    """Normalize a passage while preserving IDs needed for evaluation."""
-
     plain = to_plain(raw)
 
     if plain is None:
@@ -408,8 +379,6 @@ def collect_evidence_passages(
     top_k: int,
     max_passage_chars: int,
 ) -> List[Dict[str, Any]]:
-    """Normalize, deduplicate, truncate, and select top evidence passages."""
-
     output: List[Dict[str, Any]] = []
     seen: Set[str] = set()
 
@@ -446,8 +415,6 @@ def collect_filtered_triples(
     triples: Sequence[Any],
     top_k: int,
 ) -> List[Any]:
-    """Deduplicate filtered triples while preserving their current order."""
-
     if top_k <= 0:
         return []
 
@@ -479,8 +446,6 @@ def format_triple_for_prompt(
     triple_obj: Any,
     index: int,
 ) -> str:
-    """Format CandidateTriple, FilteredTriple, Triple, or raw triples."""
-
     plain = to_plain(triple_obj)
     score = None
     triple = plain
@@ -548,8 +513,6 @@ def build_answer_messages(
     evidence_passages: Sequence[Dict[str, Any]],
     filtered_triples: Sequence[Any],
 ) -> List[Dict[str, str]]:
-    """Build the original grounded-answer prompt."""
-
     triple_lines: List[str] = []
 
     for index, triple in enumerate(
@@ -708,8 +671,6 @@ def parse_answer_response(
     Dict[str, Any],
     bool,
 ]:
-    """Parse one answer response and report whether JSON parsing succeeded."""
-
     parsed = extract_json_object(raw_response)
 
     if parsed is None:
@@ -717,7 +678,6 @@ def parse_answer_response(
             raw_response
         ).strip()
 
-        # Preserve the original fallback while explicitly recording failure.
         first_line = (
             cleaned.split("\n")[0].strip()
             if cleaned
@@ -793,7 +753,6 @@ def validate_supporting_passage_ids(
     supporting_passage_ids: Sequence[str],
     evidence_passages: Sequence[Dict[str, Any]],
 ) -> Tuple[List[str], List[str]]:
-    """Separate grounded support IDs from hallucinated/unknown IDs."""
 
     valid_ids = {
         str(passage.get("passage_id"))
@@ -878,8 +837,6 @@ def generate_one_answer(
     messages: Sequence[Dict[str, str]],
     max_output_tokens: int,
 ) -> str:
-    """Generate using a message API, with the original prompt fallback."""
-
     try:
         raw = backend.generate(
             messages=list(messages),
@@ -904,7 +861,6 @@ def generate_one_answer(
 
 
 class GroundedAnswerReader:
-    """Frozen LLM reader for one finalized agent trajectory."""
 
     def __init__(
         self,
@@ -928,8 +884,6 @@ class GroundedAnswerReader:
             Sequence[Any]
         ] = None,
     ) -> AnswerReaderResult:
-        """Generate one grounded answer from finalized evidence."""
-
         evidence_passages = (
             collect_evidence_passages(
                 passages=passages,
@@ -1033,7 +987,6 @@ class GroundedAnswerReader:
         self,
         row: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Compatibility helper for serialized retrieval trajectories."""
 
         source_row = row
         trajectory = row.get("trajectory")
