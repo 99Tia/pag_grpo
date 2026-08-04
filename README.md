@@ -1,6 +1,6 @@
 # PAG-GRPO
 
-**Preference- and PPR-Guided Agentic Graph Retrieval with Trajectory-Level GRPO**
+**PAG-GRPO: PPR-Guided Agentic Graph Retrieval with Trajectory-Level Group Relative Policy Optimization for Multi-Hop Question Answering**
 
 PAG-GRPO is an agentic graph-retrieval framework for multi-hop question answering. It combines OpenIE-based graph construction, dense retrieval with NV-Embed-v2, LLM-guided triple filtering, Personalized PageRank over an entity-passage graph, iterative evidence memory, a trainable Llama-3 8B controller, trajectory-level Group Relative Policy Optimization (GRPO), and frozen evidence selection and grounded answer generation.
 
