@@ -1,12 +1,3 @@
-"""
-OpenIE extraction module for the framework.
-Main purpose:
-    passage text
-    -> named entities
-    -> relation triples
-    -> OpenIEDoc objects
-"""
-
 from __future__ import annotations
 import ast
 import json
@@ -259,8 +250,6 @@ class BaseLLMBackend:
 
 
 class MockBackend(BaseLLMBackend):
-    """Debug backend"""
-
     def generate(self, messages: List[Dict[str, str]], max_tokens: int) -> str:
         user_text = messages[-1]["content"].lower()
         if "named_entities" in user_text:
