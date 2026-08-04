@@ -1,8 +1,3 @@
-"""Triple/passage/entity indexing for the framework. This module builds disk-cached embedding indexes for:
-    chunk  -> passage texts
-    entity -> entity/phrase texts
-    fact   -> extracted triples/facts"""
-
 from __future__ import annotations
 import json
 import logging
@@ -396,7 +391,7 @@ class TripleIndex:
         query: str,
         normalize_scores: bool = True,
     ) -> np.ndarray:
-        """Compute query-to-triple similarity scores."""
+
         self._require_loaded()
 
         query_embedding = self._encode_query(
@@ -419,7 +414,6 @@ class TripleIndex:
         top_k: int = 50,
         normalize_scores: bool = True,
     ) -> List[CandidateTriple]:
-        """Retrieve candidate triples before LLM filtering."""
         self._require_loaded()
 
         scores = self.get_fact_scores(
@@ -456,7 +450,6 @@ class TripleIndex:
         query: str,
         normalize_scores: bool = True,
     ) -> np.ndarray:
-        """Compute query-to-passage similarity scores."""
         self._require_loaded()
 
         query_embedding = self._encode_query(
