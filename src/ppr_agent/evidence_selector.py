@@ -1,33 +1,4 @@
-"""Chain-aware LLM evidence selection for multi-hop question answering.
-
-This module is a reusable package version of:
-    scripts/llm_select_evidence_v2.py
-
-The default prompt, selection behavior, fallback behavior, and passage ordering
-are intentionally kept compatible with the original v2 script so that moving
-the selector into the online agent environment does not silently change the
-pre-GRPO method.
-
-Typical use
------------
-selector = EvidenceSelectorV2(
-    EvidenceSelectorConfig(
-        base_url="http://localhost:8000/v1",
-        model_name="llama70b-filter",
-    )
-)
-
-result = selector.select(
-    question=question,
-    passages=evidence_passages,
-    filtered_triples=filtered_triples,
-)
-
-reordered_passages = result.passages
-"""
-
 from __future__ import annotations
-
 import json
 import os
 import re
@@ -41,8 +12,6 @@ from openai import OpenAI
 
 @dataclass
 class EvidenceSelectorConfig:
-    """Configuration for the chain-aware evidence selector."""
-
     base_url: str
     model_name: str
 
@@ -57,8 +26,6 @@ class EvidenceSelectorConfig:
     max_tokens: int = 700
     retries: int = 3
     sleep_base: float = 1.0
-
-    # Keep behavior identical to the original script on LLM failure.
     fallback_to_original_order: bool = True
 
     def validate(self) -> None:
@@ -82,8 +49,6 @@ class EvidenceSelectorConfig:
 
 @dataclass
 class EvidenceSelectorResult:
-    """Output of one evidence-selection call."""
-
     question: str
     passages: List[Dict[str, Any]]
     selected_indices: List[int]
@@ -121,7 +86,6 @@ class EvidenceSelectorResult:
 
 
 def to_plain(value: Any) -> Any:
-    """Convert dataclasses and lightweight objects to JSON-compatible values."""
     if value is None:
         return None
 
@@ -144,7 +108,6 @@ def to_plain(value: Any) -> Any:
 
 
 def normalize_passage(passage: Any) -> Optional[Dict[str, Any]]:
-    """Normalize a passage object while preserving all of its original fields."""
     plain = to_plain(passage)
 
     if isinstance(plain, str):
@@ -204,7 +167,6 @@ def passage_score(passage: Dict[str, Any]) -> str:
 
 
 def passage_aliases(passage: Dict[str, Any]) -> Set[str]:
-    """Collect all known IDs that may identify the same passage."""
     ids: Set[str] = set()
 
     for key in ["id", "passage_id", "node_id", "idx", "fallback_idx"]:
@@ -240,11 +202,6 @@ def alias_key(passage: Dict[str, Any]) -> str:
 
 
 def triple_to_text(triple: Any) -> str:
-    """Render a triple using the same field priority as selector v2.
-
-    The helper accepts dataclasses as well as serialized dictionaries. It also
-    understands the framework's CandidateTriple/FilteredTriple wrapper format.
-    """
     plain = to_plain(triple)
 
     if not isinstance(plain, dict):
@@ -289,7 +246,6 @@ def triple_to_text(triple: Any) -> str:
 
 
 def extract_json(text: str) -> Dict[str, Any]:
-    """Extract one JSON object from an LLM response."""
     cleaned = str(text or "").strip()
 
     cleaned = re.sub(
@@ -300,7 +256,6 @@ def extract_json(text: str) -> Dict[str, Any]:
     ).strip()
     cleaned = re.sub(r"```$", "", cleaned).strip()
 
-    # First preserve the original v2 behavior for ordinary outputs.
     match = re.search(r"\{.*\}", cleaned, flags=re.DOTALL)
 
     if match is None:
@@ -319,7 +274,6 @@ def normalize_indices(
     top_pool: int,
     select_k: int,
 ) -> List[int]:
-    """Validate one-based candidate indices returned by the selector."""
     if not isinstance(indices, list):
         return []
 
@@ -347,7 +301,6 @@ def fill_missing_indices(
     top_pool: int,
     select_k: int,
 ) -> List[int]:
-    """Fill underspecified LLM selections using the original PPR order."""
     output = list(selected_indices)
     seen = set(output)
 
@@ -373,7 +326,6 @@ def build_prompt(
     max_passage_chars: int,
     max_triples: int,
 ) -> str:
-    """Build the original chain-aware selector-v2 prompt."""
 
     triple_lines: List[str] = []
 
@@ -455,7 +407,6 @@ def reorder_by_selection(
     selected_indices: Sequence[int],
     top_pool: int,
 ) -> List[Dict[str, Any]]:
-    """Move selected pool passages to the front, then preserve remaining order."""
     pool = list(passages[:top_pool])
     tail = list(passages[top_pool:])
 
@@ -496,13 +447,6 @@ def add_rank_metadata(
     selected_indices: Sequence[int],
     top_pool: int,
 ) -> None:
-    """Attach selector metadata without changing the resulting order.
-
-    `llm_selector_v2_selected` remains compatible with the old script: the
-    selected passages occupy the first `len(selected_indices)` positions after
-    reordering. Additional original/new rank fields are included only for
-    analysis and do not affect inference.
-    """
     original_rank_by_key: Dict[str, int] = {
         alias_key(passage): rank
         for rank, passage in enumerate(original_passages, start=1)
@@ -531,8 +475,6 @@ def add_rank_metadata(
 
 
 class EvidenceSelectorV2:
-    """Reusable chain-aware evidence selector."""
-
     def __init__(
         self,
         config: EvidenceSelectorConfig,
@@ -594,7 +536,6 @@ class EvidenceSelectorV2:
         passages: Sequence[Any],
         filtered_triples: Optional[Sequence[Any]] = None,
     ) -> EvidenceSelectorResult:
-        """Select and reorder evidence for one completed trajectory."""
         normalized_passages: List[Dict[str, Any]] = []
 
         for passage in passages:
@@ -719,11 +660,6 @@ class EvidenceSelectorV2:
             )
 
     def select_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
-        """Compatibility helper for processing a serialized trajectory row.
-
-        This allows the original command-line script to become a thin wrapper
-        around the package module without changing its output organization.
-        """
         new_row = deepcopy(row)
 
         passages_value = (
