@@ -1,19 +1,3 @@
-"""Hybrid PPR + LLM-selected evidence fusion.
-
-This module is the reusable package form of:
-
-    scripts/hybrid_merge_ppr_llmselect.py
-
-The default behavior intentionally preserves the working `keep2` fusion rule:
-
-1. Keep the first `keep_ppr_top_n` passages from the original PPR order.
-2. Fill the remaining leading positions from the LLM-selected/reranked order.
-3. Append the rest of the original PPR ranking.
-4. Remove duplicate passages while preserving order.
-
-The module does not call an LLM and does not modify retrieval scores.
-"""
-
 from __future__ import annotations
 
 import json
@@ -29,7 +13,6 @@ class EvidenceFusionConfig:
     keep_ppr_top_n: int = 2
     target_top_k: int = 5
 
-    # Use deep copies so one GRPO trajectory cannot mutate another.
     copy_passages: bool = True
 
     def validate(self) -> None:
@@ -47,7 +30,6 @@ class EvidenceFusionConfig:
 
 @dataclass
 class EvidenceFusionResult:
-    """Result returned by one hybrid-fusion call."""
 
     passages: List[Dict[str, Any]]
 
@@ -66,8 +48,6 @@ class EvidenceFusionResult:
 
 
 def to_plain(value: Any) -> Any:
-    """Convert framework objects and dataclasses to plain Python values."""
-
     if value is None:
         return None
 
@@ -99,8 +79,6 @@ def to_plain(value: Any) -> Any:
 
 
 def normalize_passage(passage: Any) -> Optional[Dict[str, Any]]:
-    """Convert a passage object into a dictionary without changing its fields."""
-
     plain = to_plain(passage)
 
     if isinstance(plain, str):
@@ -160,8 +138,6 @@ def passage_aliases(passage: Dict[str, Any]) -> Set[str]:
 
 
 def passage_key(passage: Dict[str, Any]) -> Tuple[str, ...]:
-    """Build a stable deduplication key matching the original script."""
-
     identifiers = sorted(passage_aliases(passage))
 
     if identifiers:
@@ -215,8 +191,6 @@ def add_unique(
     passage: Dict[str, Any],
     seen: Set[Tuple[str, ...]],
 ) -> bool:
-    """Append a passage when it has not already been added."""
-
     key = passage_key(passage)
 
     if key in seen:
@@ -234,8 +208,6 @@ def add_fusion_metadata(
     llm_added_keys: Set[Tuple[str, ...]],
     target_top_k: int,
 ) -> None:
-    """Attach analysis metadata without affecting ranking."""
-
     for final_rank, passage in enumerate(passages, start=1):
         metadata = passage.get("metadata")
 
@@ -259,8 +231,6 @@ def add_fusion_metadata(
 
 
 class HybridEvidenceFuser:
-    """Apply the fixed hybrid PPR–LLM evidence-fusion rule."""
-
     def __init__(self, config: EvidenceFusionConfig):
         config.validate()
         self.config = config
@@ -270,23 +240,6 @@ class HybridEvidenceFuser:
         base_passages: Sequence[Any],
         llm_passages: Sequence[Any],
     ) -> EvidenceFusionResult:
-        """Fuse original PPR evidence with LLM-selected evidence.
-
-        Parameters
-        ----------
-        base_passages:
-            Original PPR-ranked evidence list.
-
-        llm_passages:
-            Evidence list reordered by EvidenceSelectorV2.
-
-        Returns
-        -------
-        EvidenceFusionResult
-            The complete fused ranking. The first `target_top_k` passages are
-            the final evidence set used by the answer reader and reward.
-        """
-
         normalized_base: List[Dict[str, Any]] = []
         normalized_llm: List[Dict[str, Any]] = []
 
@@ -319,7 +272,6 @@ class HybridEvidenceFuser:
         ppr_kept_ids: List[str] = []
         llm_added_ids: List[str] = []
 
-        # 1. Preserve the strongest fixed PPR prefix.
         for passage in normalized_base[
             : self.config.keep_ppr_top_n
         ]:
@@ -330,7 +282,6 @@ class HybridEvidenceFuser:
                     primary_passage_id(passage)
                 )
 
-        # 2. Fill the leading evidence positions from the LLM order.
         for passage in normalized_llm:
             if len(output) >= self.config.target_top_k:
                 break
@@ -342,10 +293,6 @@ class HybridEvidenceFuser:
                     primary_passage_id(passage)
                 )
 
-        # 3. Append the remaining original PPR ranking.
-        #
-        # This intentionally follows the original script: the final complete
-        # list cannot exceed the number of passages in the base PPR list.
         for passage in normalized_base:
             if len(output) >= len(normalized_base):
                 break
@@ -395,8 +342,6 @@ class HybridEvidenceFuser:
         base_row: Dict[str, Any],
         llm_row: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Compatibility helper for the original JSONL script workflow."""
-
         new_row = deepcopy(base_row)
 
         base_passages = (
@@ -449,8 +394,6 @@ def merge_evidence(
     keep_ppr_top_n: int = 2,
     target_top_k: int = 5,
 ) -> EvidenceFusionResult:
-    """Functional convenience wrapper."""
-
     fuser = HybridEvidenceFuser(
         EvidenceFusionConfig(
             keep_ppr_top_n=keep_ppr_top_n,
