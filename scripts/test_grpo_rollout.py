@@ -1,22 +1,4 @@
 from __future__ import annotations
-
-"""End-to-end rollout and GRPO-loss integration test.
-
-This script runs one real MuSiQue question through the complete training path:
-
-    trainable Llama-3 8B + LoRA controller
-        -> G independent multi-step trajectories
-        -> frozen SearchGraph/PPR + 70B services
-        -> trajectory rewards and group-relative advantages
-        -> policy-step collation
-        -> clipped token-level GRPO loss
-        -> one backward pass on controller JSON tokens only
-
-By default, the test does *not* call optimizer.step(), so the LoRA weights are
-not changed. Use ``--optimizer_step`` only when you deliberately want to verify
-that one tiny update can be applied.
-"""
-
 import argparse
 import json
 import logging
@@ -40,10 +22,6 @@ for path in (str(SRC_DIR), str(SCRIPT_DIR)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-
-# Reuse the exact construction functions used by the full trainer. This keeps
-# the test and training paths synchronized rather than maintaining a second,
-# slightly different environment/model setup.
 import train_controller_grpo as train_lib  # noqa: E402
 from ppr_agent.grpo_loss import (  # noqa: E402
     GRPOLoss,
@@ -57,18 +35,12 @@ from ppr_agent.grpo_types import PolicyStepSample, RolloutGroup  # noqa: E402
 logger = logging.getLogger("test_grpo_rollout")
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = train_lib.build_arg_parser()
     parser.description = (
         "Run one end-to-end GRPO rollout/loss/backward integration test."
     )
 
-    # Safe test defaults. Explicit CLI values still override these defaults.
     parser.set_defaults(
         limit=1,
         max_train_groups=1,
@@ -127,11 +99,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Release unused cached CUDA blocks before exiting.",
     )
     return parser
-
-
-# ---------------------------------------------------------------------------
-# Diagnostics
-# ---------------------------------------------------------------------------
 
 
 def _json_safe(value: Any) -> Any:
@@ -303,11 +270,6 @@ def rollout_summary(group: RolloutGroup) -> Dict[str, Any]:
     }
 
 
-# ---------------------------------------------------------------------------
-# Backward-only microbatch path
-# ---------------------------------------------------------------------------
-
-
 def _chunks(
     values: Sequence[PolicyStepSample],
     size: int,
@@ -327,17 +289,6 @@ def backward_one_group(
     device: torch.device,
     max_policy_steps_per_microbatch: int,
 ) -> Dict[str, Any]:
-    """Backpropagate one group without applying an optimizer step.
-
-    The scaling exactly mirrors ``train_controller_grpo.py``:
-
-        active tokens in microbatch
-        ---------------------------  x  1 / number of trajectories
-        active tokens in trajectory
-
-    Thus, processing steps separately still recovers trajectory-mean weighting.
-    """
-
     samples = collect_policy_step_samples([group])
     if not samples:
         raise ValueError("The rollout group produced no policy-step samples.")
@@ -419,11 +370,6 @@ def backward_one_group(
         }
     )
     return weighted_metrics
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 
 def main() -> int:
